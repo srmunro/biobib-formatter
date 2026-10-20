@@ -11,6 +11,16 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: readonly ReleaseNote[] = [
   {
+    releasedAt: 'October 20, 2026, 2:35 PM PDT',
+    releasedAtIso: '2026-10-20T14:35:00-07:00',
+    title: 'Service, Teaching, and Grant Extraction Update',
+    changes: [
+      'Recognized CV sections titled Service and Teaching/Mentoring Experience so their records are reviewed as university service and teaching activity instead of being left blank.',
+      'Grouped flattened Word-table grant cells into compact evidence blocks so award titles, agencies, amounts, periods, and roles can be reviewed together.',
+      'Clarified grant review instructions for table-based research support and kept source-backed extraction checks in place.',
+    ],
+  },
+  {
     releasedAt: 'September 24, 2026, 5:45 PM PDT',
     releasedAtIso: '2026-09-24T17:45:00-07:00',
     title: 'Source-Verified GLM Extraction',

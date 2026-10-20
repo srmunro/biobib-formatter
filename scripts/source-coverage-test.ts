@@ -233,6 +233,67 @@ test('numbered subsections retain their parent category and do not turn student 
   assert(recordsForSlice(source, 'II_external').some(record => record.text === 'Journal Example'));
 });
 
+test('standalone service and teaching-mentoring headings route their records to the correct slices', () => {
+  const source = 'INVITED PRESENTATIONS\n\nExample seminar, Example University, 2024\n\nSERVICE\n\nMOST SIGNIFICANT CURRENT SERVICE\n\nGraduate Admissions Committee, 2024-present\n\nTEACHING/MENTORING EXPERIENCE\n\nFORMER PH.D. STUDENTS\n\nStudent Example, Ph.D. 2023';
+  const service = recordsForSlice(source, 'II_service_post_2020');
+  const teaching = recordsForSlice(source, 'II_teaching');
+  assert(service.some(record => record.text.includes('Graduate Admissions Committee')));
+  assert(teaching.some(record => record.text.includes('Student Example')));
+  assert(!recordsForSlice(source, 'II_presentations_post_2020').some(record => record.text.includes('Graduate Admissions Committee')));
+});
+
+test('flattened grant table cells are grouped into compact source evidence blocks', () => {
+  const grants = Array.from({ length: 12 }, (_, index) => {
+    const grant = index + 1;
+    return [
+      `R01 GM${100000 + grant} - Example grant ${grant}`,
+      'NIH: NIGMS',
+      `$${100000 + grant}`,
+      `04/01/202${grant % 2} - 03/31/202${(grant + 1) % 2}`,
+      'PI',
+    ];
+  }).flat();
+  const source = `RESEARCH SUPPORT\n\n${grants.join('\n\n')}\n\nAPPOINTMENTS\n\nProfessor`;
+  const selected = recordsForSlice(source, 'II_grants');
+  const evidenceBlocks = selected.filter(record => !record.heading);
+  assert.equal(evidenceBlocks.length, 8);
+  assert(evidenceBlocks.every(record => record.text.includes('\n')));
+  assert(evidenceBlocks[0].text.includes('R01 GM100001'));
+  assert(evidenceBlocks.some(record => record.text.includes('R01 GM100012')));
+  assert(!evidenceBlocks[0].text.includes('Professor'));
+  assert(recordsForSlice(source, 'meta_and_I').some(record => record.text === 'Professor'));
+});
+
+test('multiple grants may cite the same grouped table evidence block', () => {
+  const source = [
+    'RESEARCH SUPPORT',
+    'Grant A: Example award',
+    'NIH',
+    '$100,000',
+    '04/01/24 - 03/31/29',
+    'PI',
+    'Grant B: Another award',
+    'NSF',
+    '$250,000',
+    '01/01/2024 - 12/31/2027',
+    'Co-PI',
+  ].join('\n\n');
+  const selected = recordsForSlice(source, 'II_grants');
+  const block = selected.find(record => record.text.includes('Grant A') && record.text.includes('Grant B'))!;
+  const raw = {
+    sections: {
+      grants: [
+        { title: 'Grant A: Example award', funder: 'NIH', amount: '$100,000', period: '04/01/24 - 03/31/29', status: 'current', role: 'PI', sourceIds: [block.id] },
+        { title: 'Grant B: Another award', funder: 'NSF', amount: '$250,000', period: '01/01/2024 - 12/31/2027', status: 'current', role: 'Co-PI', sourceIds: [block.id] },
+      ],
+    },
+    excluded: selected.filter(record => record.id !== block.id).map(record => ({ id: record.id, reason: 'Heading only' })),
+  };
+  const result = validateCoveredResult(raw, selected, ['grants']);
+  assert.equal(result.sections.grants!.length, 2);
+  assert.deepEqual(result.coverage!.included, [block.id]);
+});
+
 test('prose mentioning education is not a heading and colloquia stop bibliography context', () => {
   const source = 'MAJOR ACCOMPLISHMENTS\n\nEducation Sciences, Speech and Language Sciences and Data Analytics in Political Science.\n\nCONFERENCE PROCEEDINGS AND REPORTS\n\nExample A (2020). A proceeding.\n\nCOLLOQUIA AND PRESENTATIONS\n\nExample talk, Example University, 2021.';
   const inventory = sourceRecords(source);
