@@ -284,6 +284,7 @@ const SLICE_PROMPTS: Record<SliceKey, { fields: string; schema: string; rules?: 
 - Current grants are active or future-ending awards; past grants are completed awards.
 - Preserve the CV's title, agency, total-cost wording, dates, PI/co-PI role, and co-PI share when available.
 - Word tables are often flattened into one line per cell. Treat grouped, newline-separated source evidence as one or more complete awards, not as separate standalone grants.
+- Every grants object must describe an actual award. Do not emit an empty placeholder to account for a heading or continuation-only source; either cite that evidence on the award it supports or exclude it with a specific reason.
 - Do not include fellowships or awards unless they are explicitly listed as research support/contracts/grants.
 - Sort current and past grants chronologically by the initial date in the grant period when the CV provides one. Sparse dates are still useful; preserve them.
 `.trim(),
