@@ -294,6 +294,39 @@ test('multiple grants may cite the same grouped table evidence block', () => {
   assert.deepEqual(result.coverage!.included, [block.id]);
 });
 
+test('source-backed text and partial grant rows survive instead of failing silently', () => {
+  const grantRecords = [
+    { id: 's1', text: 'Grant A\nNIH\n$100,000\n2024-2027\nPI', context: 'RESEARCH SUPPORT', heading: false, start: 0, end: 50 },
+    { id: 's2', text: 'Grant B\nNSF', context: 'RESEARCH SUPPORT', heading: false, start: 51, end: 70 },
+    { id: 's3', text: 'Grant C\n2024-2026\nPI', context: 'RESEARCH SUPPORT', heading: false, start: 71, end: 100 },
+    { id: 's4', text: 'RESEARCH SUPPORT', context: 'RESEARCH SUPPORT', heading: true, start: 101, end: 120 },
+  ];
+  const raw = {
+    sections: {
+      grants: [
+        { title: 'Grant A', funder: 'NIH', amount: '$100,000', period: '2024-2027', status: 'current', role: 'PI', sourceIds: ['s1'] },
+        { text: 'Grant B', sourceIds: ['s2'] },
+        { text: 'Grant C', period: '2024-2026', status: 'current', role: 'PI', sourceIds: ['s3'] },
+      ],
+    },
+    excluded: [{ id: 's4', reason: 'Heading only' }],
+  };
+  const result = validateCoveredResult(raw, grantRecords, ['grants']);
+  assert.deepEqual(result.sections.grants!.map(grant => grant.title), ['Grant A', 'Grant B', 'Grant C']);
+  assert.equal(result.sections.grants![2].period, '2024-2026');
+  assert.equal(result.sections.grants![2].role, 'PI');
+  assert.equal(result.sections.grants![2].status, 'current');
+
+  const emptyPlaceholder = {
+    sections: { grants: [{ title: '', funder: '', period: '', status: 'past', role: '', sourceIds: ['s1'] }] },
+    excluded: [{ id: 's4', reason: 'Heading only' }],
+  };
+  assert.throws(
+    () => validateCoveredResult(emptyPlaceholder, grantRecords, ['grants']),
+    /Malformed entries would be discarded from grants/,
+  );
+});
+
 test('prose mentioning education is not a heading and colloquia stop bibliography context', () => {
   const source = 'MAJOR ACCOMPLISHMENTS\n\nEducation Sciences, Speech and Language Sciences and Data Analytics in Political Science.\n\nCONFERENCE PROCEEDINGS AND REPORTS\n\nExample A (2020). A proceeding.\n\nCOLLOQUIA AND PRESENTATIONS\n\nExample talk, Example University, 2021.';
   const inventory = sourceRecords(source);

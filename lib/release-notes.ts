@@ -11,6 +11,16 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: readonly ReleaseNote[] = [
   {
+    releasedAt: 'October 20, 2026, 8:37 PM PDT',
+    releasedAtIso: '2026-10-20T20:37:00-07:00',
+    title: 'Grant Reliability Update',
+    changes: [
+      'Preserved source-backed grant records when award details are supplied as text or as a partial structured row.',
+      'Continued to reject empty placeholder grants so incomplete awards cannot disappear silently during document assembly.',
+      'Clarified grant review guidance for table-based research support and continuation-only evidence.',
+    ],
+  },
+  {
     releasedAt: 'October 20, 2026, 2:35 PM PDT',
     releasedAtIso: '2026-10-20T14:35:00-07:00',
     title: 'Service, Teaching, and Grant Extraction Update',
